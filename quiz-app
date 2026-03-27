@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Quizz</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --ink: #0d0d11;
+  --ink2: #17171f;
+  --veil: rgba(255,255,255,0.035);
+  --veil2: rgba(255,255,255,0.065);
+  --veil3: rgba(255,255,255,0.1);
+  --ghost: rgba(255,255,255,0.4);
+  --ghost2: rgba(255,255,255,0.72);
+  --ghost3: #ffffff;
+  --line: rgba(255,255,255,0.07);
+  --line2: rgba(255,255,255,0.13);
+  --correct-c: #4ade80;
+  --wrong-c: #f87171;
+  --correct-bg: rgba(74,222,128,0.05);
+  --wrong-bg: rgba(248,113,113,0.05);
+  --correct-border: rgba(74,222,128,0.25);
+  --wrong-border: rgba(248,113,113,0.25);
+}
+[data-theme="light"] {
+  --ink: #f2f2ee;
+  --ink2: #e8e8e2;
+  --veil: rgba(0,0,0,0.03);
+  --veil2: rgba(0,0,0,0.055);
+  --veil3: rgba(0,0,0,0.085);
+  --ghost: rgba(0,0,0,0.38);
+  --ghost2: rgba(0,0,0,0.68);
+  --ghost3: #0d0d11;
+  --line: rgba(0,0,0,0.07);
+  --line2: rgba(0,0,0,0.13);
+  --correct-c: #15803d;
+  --wrong-c: #b91c1c;
+  --correct-bg: rgba(21,128,61,0.06);
+  --wrong-bg: rgba(185,28,28,0.06);
+  --correct-border: rgba(21,128,61,0.25);
+  --wrong-border: rgba(185,28,28,0.25);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{transition:background 0.4s;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--ink);
+  color:var(--ghost2);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  transition:background 0.4s,color 0.4s;
+  position:relative;
+}
+body::before{
+  content:'';
+  position:fixed;
+  width:700px;height:500px;
+  top:-180px;left:50%;transform:translateX(-50%);
+  background:radial-gradient(ellipse,rgba(255,255,255,0.022) 0%,transparent 68%);
+  pointer-events:none;z-index:0;
+}
+.wrap{width:100%;max-width:540px;position:relative;z-index:1;}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.brand{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--ghost2);letter-spacing:0.02em;}
+.brand i{font-style:italic;color:var(--ghost);}
+.mode-btn{
+  background:none;border:1px solid var(--line2);border-radius:6px;
+  padding:5px 11px;font-family:'DM Mono',monospace;font-size:0.62rem;
+  letter-spacing:0.08em;color:var(--ghost);cursor:pointer;transition:all 0.2s;
+}
+.mode-btn:hover{border-color:var(--ghost);color:var(--ghost2);}
+
+/* CARD */
+.card{
+  background:var(--veil);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:40px;
+  transition:background 0.4s,border-color 0.4s;
+}
+
+/* START */
+.s-eyebrow{
+  font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--ghost);margin-bottom:18px;
+}
+.s-title{
+  font-family:'DM Serif Display',serif;
+  font-size:2.8rem;line-height:1.08;
+  color:var(--ghost3);margin-bottom:10px;letter-spacing:-0.01em;
+}
+.s-title em{font-style:italic;color:var(--ghost);}
+.s-desc{
+  font-size:0.86rem;font-weight:300;color:var(--ghost);
+  line-height:1.75;margin-bottom:36px;max-width:360px;
+}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:36px;}
+.feat{
+  background:var(--veil2);border:1px solid var(--line);border-radius:10px;
+  padding:11px 12px;
+}
+.feat-head{font-size:0.71rem;font-weight:500;color:var(--ghost2);margin-bottom:2px;}
+.feat-sub{font-size:0.67rem;font-weight:300;color:var(--ghost);line-height:1.4;}
+.rule{width:100%;height:1px;background:var(--line);margin:28px 0;}
+.s-foot{display:flex;align-items:center;justify-content:space-between;}
+.s-note{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;color:var(--ghost);}
+
+/* buttons */
+.btn-solid{
+  background:var(--ghost3);border:none;border-radius:9px;
+  padding:11px 24px;font-family:'DM Sans',sans-serif;font-size:0.86rem;
+  font-weight:500;color:var(--ink);cursor:pointer;transition:all 0.2s;
+  letter-spacing:0.01em;
+}
+.btn-solid:hover{opacity:0.86;transform:translateY(-1px);}
+.btn-outline{
+  background:none;border:1px solid var(--line2);border-radius:9px;
+  padding:11px 20px;font-family:'DM Sans',sans-serif;font-size:0.86rem;
+  font-weight:400;color:var(--ghost2);cursor:pointer;transition:all 0.2s;
+}
+.btn-outline:hover{background:var(--veil2);border-color:var(--ghost);color:var(--ghost3);}
+
+/* QUIZ */
+.q-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.q-tag{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ghost);}
+
+/* seg bar */
+.segbar{display:flex;gap:5px;margin-bottom:30px;}
+.seg{
+  flex:1;height:2px;border-radius:1px;background:var(--line2);
+  position:relative;overflow:hidden;
+}
+.seg::after{
+  content:'';position:absolute;inset:0;transform:scaleX(0);
+  transform-origin:left;border-radius:1px;transition:transform 0.4s ease;
+}
+.seg.cur::after{transform:scaleX(1);background:rgba(255,255,255,0.55);animation:blink 1.6s ease-in-out infinite;}
+.seg.ok::after{transform:scaleX(1);background:var(--correct-c);}
+.seg.no::after{transform:scaleX(1);background:var(--wrong-c);}
+@keyframes blink{0%,100%{opacity:0.55}50%{opacity:1}}
+
+/* timer */
+.t-arc{position:relative;width:34px;height:34px;}
+.t-arc svg{transform:rotate(-90deg);}
+.t-arc circle{transition:stroke-dashoffset 1s linear,stroke 0.4s;}
+.t-digit{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--ghost2);
+}
+
+.question{
+  font-family:'DM Serif Display',serif;
+  font-size:1.5rem;line-height:1.32;
+  color:var(--ghost3);margin-bottom:26px;min-height:56px;
+}
+.opts{display:flex;flex-direction:column;gap:9px;}
+.opt{
+  display:flex;align-items:center;gap:13px;
+  width:100%;background:var(--veil);border:1px solid var(--line);
+  border-radius:11px;padding:13px 15px;cursor:pointer;text-align:left;
+  font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:300;
+  color:var(--ghost2);transition:all 0.18s;
+  animation:fadeUp 0.28s ease both;
+}
+.opt:nth-child(1){animation-delay:0s}
+.opt:nth-child(2){animation-delay:0.05s}
+.opt:nth-child(3){animation-delay:0.1s}
+.opt:nth-child(4){animation-delay:0.15s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.opt-k{
+  width:23px;height:23px;border:1px solid var(--line2);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--ghost);
+  flex-shrink:0;transition:all 0.18s;
+}
+.opt:hover:not(:disabled){background:var(--veil3);border-color:var(--line2);color:var(--ghost3);transform:translateX(3px);}
+.opt:hover:not(:disabled) .opt-k{border-color:var(--ghost);color:var(--ghost2);}
+.opt:disabled{cursor:default;transform:none!important;}
+.opt.ok{background:var(--correct-bg);border-color:var(--correct-border);color:var(--correct-c);}
+.opt.ok .opt-k{border-color:var(--correct-border);color:var(--correct-c);background:rgba(74,222,128,0.08);}
+.opt.no{background:var(--wrong-bg);border-color:var(--wrong-border);color:var(--wrong-c);}
+.opt.no .opt-k{border-color:var(--wrong-border);color:var(--wrong-c);background:rgba(248,113,113,0.08);}
+
+.next-row{margin-top:22px;display:none;align-items:center;justify-content:space-between;animation:fadeUp 0.22s ease both;}
+.next-row.show{display:flex;}
+.verdict{font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;}
+.v-ok{color:var(--correct-c);}
+.v-no{color:var(--wrong-c);}
+.btn-next{
+  background:none;border:1px solid var(--line2);border-radius:8px;
+  padding:8px 16px;font-family:'DM Mono',monospace;font-size:0.65rem;
+  letter-spacing:0.06em;color:var(--ghost2);cursor:pointer;transition:all 0.2s;
+}
+.btn-next:hover{background:var(--veil3);border-color:var(--ghost);color:var(--ghost3);}
+
+/* RESULTS */
+.res{display:none;}
+.res.show{display:block;}
+.res-eyebrow{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--ghost);margin-bottom:10px;}
+.res-score{font-family:'DM Serif Display',serif;font-size:4.2rem;line-height:1;color:var(--ghost3);letter-spacing:-0.02em;}
+.res-score sup{font-size:1.4rem;color:var(--ghost);font-family:'DM Sans',sans-serif;font-weight:300;vertical-align:middle;margin-left:4px;}
+.res-line{font-size:0.84rem;font-weight:300;color:var(--ghost);margin-top:8px;line-height:1.65;}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:24px 0;}
+.stat{
+  background:var(--veil2);border:1px solid var(--line);
+  border-radius:10px;padding:13px 10px;
+}
+.stat-n{font-family:'DM Mono',monospace;font-size:1.15rem;display:block;margin-bottom:3px;color:var(--ghost3);}
+.stat-l{font-family:'DM Mono',monospace;font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ghost);}
+
+.rev{border-top:1px solid var(--line);padding-top:18px;margin-bottom:26px;}
+.rev-head{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ghost);margin-bottom:12px;}
+.rev-list{display:flex;flex-direction:column;gap:8px;max-height:180px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line2) transparent;}
+.rev-item{display:flex;gap:9px;align-items:flex-start;font-size:0.75rem;}
+.rev-dot{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.rev-q{color:var(--ghost2);font-size:0.72rem;margin-bottom:2px;}
+.rev-a{font-family:'DM Mono',monospace;font-size:0.65rem;}
+
+.act{display:flex;gap:9px;justify-content:flex-end;}
+
+@media(max-width:480px){
+  .card{padding:24px;}
+  .s-title{font-size:2rem;}
+  .feats{grid-template-columns:1fr 1fr;}
+  .stats{grid-template-columns:1fr 1fr;}
+  .question{font-size:1.22rem;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="nav">
+    <div class="brand">quiz<i>.</i></div>
+    <button class="mode-btn" id="modeBtn" onclick="toggleTheme()">LIGHT MODE</button>
+  </nav>
+
+  <div class="card">
+
+    <!-- START -->
+    <div id="startScreen">
+      <p class="s-eyebrow">CSC336 · Web Technologies · Spring 2026</p>
+      <h1 class="s-title">Test your<br><em>knowledge.</em></h1>
+      <p class="s-desc">Five randomised questions on HTML, CSS, JavaScript and Bootstrap — with a 20-second timer per question and downloadable results.</p>
+      <div class="feats">
+        <div class="feat"><div class="feat-head">Timer</div><div class="feat-sub">20 seconds per question</div></div>
+        <div class="feat"><div class="feat-head">Progress</div><div class="feat-sub">Colour-coded segments</div></div>
+        <div class="feat"><div class="feat-head">PDF</div><div class="feat-sub">Download your results</div></div>
+        <div class="feat"><div class="feat-head">Feedback</div><div class="feat-sub">Live answer highlights</div></div>
+        <div class="feat"><div class="feat-head">Themes</div><div class="feat-sub">Dark &amp; light mode</div></div>
+        <div class="feat"><div class="feat-head">Responsive</div><div class="feat-sub">Any screen size</div></div>
+      </div>
+      <div class="rule"></div>
+      <div class="s-foot">
+        <span class="s-note">5 QUESTIONS · ~2 MIN</span>
+        <button class="btn-solid" onclick="startQuiz()">Begin →</button>
+      </div>
+    </div>
+
+    <!-- QUIZ -->
+    <div id="quizScreen" style="display:none">
+      <div class="q-top">
+        <span class="q-tag" id="qTag">Question 1 of 5</span>
+        <div class="t-arc">
+          <svg width="34" height="34" viewBox="0 0 34 34">
+            <circle cx="17" cy="17" r="13" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="2"/>
+            <circle id="tArc" cx="17" cy="17" r="13" fill="none"
+              stroke="rgba(255,255,255,0.45)" stroke-width="2"
+              stroke-dasharray="81.68" stroke-dashoffset="0" stroke-linecap="round"/>
+          </svg>
+          <div class="t-digit" id="tNum">20</div>
+        </div>
+      </div>
+
+      <div class="segbar" id="segbar"></div>
+
+      <p class="question" id="qText"></p>
+      <div class="opts" id="opts"></div>
+
+      <div class="next-row" id="nextRow">
+        <span class="verdict" id="verd"></span>
+        <button class="btn-next" id="btnNext" onclick="nextQ()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="res" id="resScreen">
+      <p class="res-eyebrow">Your results</p>
+      <div class="res-score" id="resScore">0<sup>/ 5</sup></div>
+      <p class="res-line" id="resLine"></p>
+
+      <div class="stats">
+        <div class="stat"><span class="stat-n" id="sC" style="color:var(--correct-c)">0</span><span class="stat-l">Correct</span></div>
+        <div class="stat"><span class="stat-n" id="sW" style="color:var(--wrong-c)">0</span><span class="stat-l">Wrong</span></div>
+        <div class="stat"><span class="stat-n" id="sA">0%</span><span class="stat-l">Accuracy</span></div>
+        <div class="stat"><span class="stat-n" id="sT">—</span><span class="stat-l">Avg / Q</span></div>
+      </div>
+
+      <div class="rev">
+        <div class="rev-head">Review</div>
+        <div class="rev-list" id="revList"></div>
+      </div>
+
+      <div class="act">
+        <button class="btn-outline" onclick="restart()">Retry</button>
+        <button class="btn-solid" onclick="dlPDF()">Download PDF</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const BANK=[
+  {q:"Which HTML tag links an external CSS stylesheet?",opts:["<style>","<link>","<script>","<css>"],ans:1,topic:"HTML"},
+  {q:"What does CSS stand for?",opts:["Computer Style Sheets","Creative Style Syntax","Cascading Style Sheets","Colorful Sheets"],ans:2,topic:"CSS"},
+  {q:"Which JavaScript method selects an element by its ID?",opts:["querySelector()","getElementById()","getElement()","selectById()"],ans:1,topic:"JavaScript"},
+  {q:"In Bootstrap 5, which class makes a container full-width?",opts:["container","container-fluid","container-full","grid-fluid"],ans:1,topic:"Bootstrap"},
+  {q:"What is the correct syntax to declare a constant in JavaScript?",opts:["var x = 5;","let x = 5;","const x = 5;","define x = 5;"],ans:2,topic:"JavaScript"},
+  {q:"Which CSS property controls the font size?",opts:["text-style","font-size","text-size","font-weight"],ans:1,topic:"CSS"},
+  {q:"What does the 'alt' attribute on an img tag provide?",opts:["Alignment","Accessible alt text","Animation label","Source path"],ans:1,topic:"HTML"},
+  {q:"Which method parses a JSON string into a JavaScript object?",opts:["JSON.parse()","JSON.stringify()","JSON.toObject()","JSON.decode()"],ans:0,topic:"JavaScript"},
+  {q:"In CSS Flexbox, which property aligns items on the cross axis?",opts:["justify-content","align-items","flex-direction","flex-wrap"],ans:1,topic:"CSS"},
+  {q:"Which Bootstrap class applies the primary button style?",opts:["btn-default","btn-main","btn-primary","btn-first"],ans:2,topic:"Bootstrap"},
+];
+
+const CIRC=2*Math.PI*13;
+const SEG_COL=['rgba(167,139,250,0.75)','rgba(94,234,212,0.75)','rgba(74,222,128,0.75)','rgba(251,191,36,0.75)','rgba(248,113,113,0.75)'];
+
+let qs=[],cur=0,sc=0,ans=[],times=[],tiv,tLeft=20,qStart;
+
+function toggleTheme(){
+  const d=document.documentElement;
+  const isLight=d.getAttribute('data-theme')==='light';
+  d.setAttribute('data-theme',isLight?'dark':'light');
+  document.getElementById('modeBtn').textContent=isLight?'LIGHT MODE':'DARK MODE';
+}
+
+function shuffle(a){return[...a].sort(()=>Math.random()-0.5);}
+
+function startQuiz(){
+  qs=shuffle(BANK).slice(0,5).map(q=>{
+    const ct=q.opts[q.ans];
+    const s=shuffle(q.opts);
+    return{...q,opts:s,ans:s.indexOf(ct)};
+  });
+  cur=0;sc=0;ans=[];times=[];
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('quizScreen').style.display='block';
+  buildSegs();
+  loadQ();
+}
+
+function buildSegs(){
+  const b=document.getElementById('segbar');
+  b.innerHTML='';
+  qs.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='seg'+(i===0?' cur':'');
+    d.id='s'+i;
+    b.appendChild(d);
+  });
+}
+
+function loadQ(){
+  const q=qs[cur];
+  document.getElementById('qTag').textContent=`Question ${cur+1} of ${qs.length}`;
+  document.getElementById('qText').textContent=q.q;
+  document.getElementById('nextRow').classList.remove('show');
+  document.getElementById('verd').textContent='';
+
+  const g=document.getElementById('opts');
+  g.innerHTML='';
+  ['A','B','C','D'].forEach((l,i)=>{
+    const b=document.createElement('button');
+    b.className='opt';
+    b.style.animationDelay=(i*0.06)+'s';
+    b.innerHTML=`<span class="opt-k">${l}</span><span>${q.opts[i]}</span>`;
+    b.onclick=()=>pick(i,b);
+    g.appendChild(b);
+  });
+
+  updateSegs();
+  startTimer();
+  qStart=Date.now();
+}
+
+function updateSegs(){
+  qs.forEach((_,i)=>{
+    const s=document.getElementById('s'+i);
+    s.className='seg';
+    if(i<cur) s.classList.add(ans[i]?.correct?'ok':'no');
+    else if(i===cur) s.classList.add('cur');
+  });
+}
+
+function startTimer(){
+  clearInterval(tiv);tLeft=20;drawTimer();
+  tiv=setInterval(()=>{tLeft--;drawTimer();if(tLeft<=0){clearInterval(tiv);timeOut();}},1000);
+}
+
+function drawTimer(){
+  document.getElementById('tNum').textContent=tLeft;
+  document.getElementById('tArc').style.strokeDashoffset=CIRC*(1-tLeft/20);
+  document.getElementById('tArc').style.stroke=
+    tLeft>10?'rgba(255,255,255,0.45)':tLeft>5?'rgba(251,191,36,0.7)':'rgba(248,113,113,0.75)';
+}
+
+function timeOut(){
+  const q=qs[cur];
+  document.querySelectorAll('.opt').forEach((b,i)=>{b.disabled=true;if(i===q.ans)b.classList.add('ok');});
+  ans[cur]={correct:false,selected:-1,question:q.q,topic:q.topic,selectedText:'Timed out',correctText:q.opts[q.ans]};
+  times.push(20);
+  showNext(false,true);
+}
+
+function pick(idx,btn){
+  clearInterval(tiv);
+  times.push(Math.round((Date.now()-qStart)/1000));
+  const q=qs[cur];const correct=idx===q.ans;
+  document.querySelectorAll('.opt').forEach((b,i)=>{b.disabled=true;if(i===q.ans)b.classList.add('ok');});
+  if(!correct)btn.classList.add('no');
+  ans[cur]={correct,selected:idx,question:q.q,topic:q.topic,selectedText:q.opts[idx],correctText:q.opts[q.ans]};
+  if(correct)sc++;
+  showNext(correct,false);
+}
+
+function showNext(correct,timedOut){
+  const v=document.getElementById('verd');
+  v.textContent=timedOut?'TIME UP':correct?'CORRECT':'INCORRECT';
+  v.className='verdict '+(correct?'v-ok':'v-no');
+  document.getElementById('nextRow').classList.add('show');
+  document.getElementById('btnNext').textContent=cur===qs.length-1?'See results →':'Continue →';
+}
+
+function nextQ(){
+  cur++;
+  if(cur>=qs.length)showResults();
+  else loadQ();
+}
+
+function showResults(){
+  document.getElementById('quizScreen').style.display='none';
+  document.getElementById('resScreen').classList.add('show');
+  const pct=Math.round(sc/qs.length*100);
+  document.getElementById('resScore').innerHTML=`${sc}<sup>/ ${qs.length}</sup>`;
+  document.getElementById('sC').textContent=sc;
+  document.getElementById('sW').textContent=qs.length-sc;
+  document.getElementById('sA').textContent=pct+'%';
+  document.getElementById('sT').textContent=Math.round(times.reduce((a,b)=>a+b,0)/times.length)+'s';
+
+  const v=['Not this time — review and retry.','A decent attempt. Keep going.','Getting there. One more run.','Very strong. Almost flawless.','Perfect. Full marks.'];
+  document.getElementById('resLine').textContent=v[sc===0?0:sc<=1?1:sc<=3?2:sc===4?3:4];
+
+  document.getElementById('revList').innerHTML=ans.map((a,i)=>`
+    <div class="rev-item">
+      <div class="rev-dot" style="background:${a.correct?'var(--correct-c)':'var(--wrong-c)'}"></div>
+      <div>
+        <div class="rev-q">${qs[i].q}</div>
+        <div class="rev-a" style="color:${a.correct?'var(--correct-c)':'var(--wrong-c)'}">
+          ${a.selectedText}${!a.correct?` &nbsp;·&nbsp; <span style="color:var(--ghost)">correct: ${a.correctText}</span>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function restart(){
+  document.getElementById('resScreen').classList.remove('show');
+  document.getElementById('startScreen').style.display='block';
+}
+
+function dlPDF(){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const pct=Math.round(sc/qs.length*100);
+  doc.setFillColor(13,13,17);doc.rect(0,0,210,297,'F');
+
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(100,100,120);
+  doc.text('CSC336 Web Technologies  ·  Assignment 2  ·  Spring 2026',20,16);
+  doc.text(new Date().toLocaleDateString(),190,16,{align:'right'});
+  doc.setDrawColor(35,35,48);doc.line(20,20,190,20);
+
+  doc.setFont('helvetica','bold');doc.setFontSize(26);doc.setTextColor(238,238,248);
+  doc.text('Quiz Results',20,38);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(150,150,170);
+  doc.text(`Score: ${sc} / ${qs.length}   (${pct}%)`,20,50);
+
+  [[sc,'CORRECT',[74,222,128]],[qs.length-sc,'WRONG',[248,113,113]],[pct+'%','ACCURACY',[165,180,252]],[Math.round(times.reduce((a,b)=>a+b,0)/times.length)+'s','AVG / Q',[148,163,184]]
+  ].forEach((s,i)=>{
+    const x=20+i*43;
+    doc.setFillColor(22,22,32);doc.roundedRect(x,60,38,24,3,3,'F');
+    doc.setTextColor(...s[2]);doc.setFont('helvetica','bold');doc.setFontSize(13);
+    doc.text(String(s[0]),x+19,71,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.setTextColor(100,100,120);
+    doc.text(s[1],x+19,79,{align:'center'});
+  });
+
+  doc.setDrawColor(35,35,48);doc.line(20,92,190,92);
+
+  let y=102;
+  ans.forEach((a,i)=>{
+    if(y>265){doc.addPage();y=20;doc.setFillColor(13,13,17);doc.rect(0,0,210,297,'F');}
+    doc.setFont('helvetica','bold');doc.setFontSize(8);
+    doc.setTextColor(...(a.correct?[74,222,128]:[248,113,113]));
+    doc.text(`Q${i+1}  ·  ${a.topic}  ·  ${a.correct?'CORRECT':'WRONG'}`,20,y);y+=6;
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(200,200,215);
+    const lines=doc.splitTextToSize(qs[i].q,162);
+    doc.text(lines,22,y);y+=lines.length*5+2;
+    doc.setTextColor(130,130,155);doc.setFontSize(8);
+    doc.text(`Your answer: ${a.selectedText}`,22,y);
+    if(!a.correct){y+=5;doc.setTextColor(74,222,128);doc.text(`Correct answer: ${a.correctText}`,22,y);}
+    y+=9;
+  });
+
+  doc.save('quiz_results.pdf');
+}
+</script>
+</body>
+</html>
